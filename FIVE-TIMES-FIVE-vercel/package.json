@@ -1,0 +1,8 @@
+{
+  "name": "five-times-five",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "openai": "^5.20.0"
+  }
+}
