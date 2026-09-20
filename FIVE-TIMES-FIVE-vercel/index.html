@@ -214,11 +214,6 @@ button{
   transition:opacity .2s ease,transform .2s ease;
 }
 
-#congrats.show{
-  opacity:1;
-  transform:translate(-50%,0) scale(1);
-}
-
 #congrats strong{
   display:block;
   font-size:15px;
@@ -366,11 +361,15 @@ function showCongrats(){
 
   clearTimeout(congratsTimer);
 
-  congrats.classList.add("show");
+  congrats.style.display = "block";
+  congrats.style.opacity = "1";
+  congrats.style.transform = "translate(-50%, 0) scale(1)";
 
   congratsTimer = setTimeout(() => {
-    congrats.classList.remove("show");
-  },3500);
+    congrats.style.opacity = "0";
+    congrats.style.transform =
+      "translate(-50%, -12px) scale(.97)";
+  },5000);
 }
 
 form.addEventListener("submit",async e => {
@@ -435,7 +434,7 @@ form.addEventListener("submit",async e => {
       data.reply
     );
 
-    if(data.guardrailBroken){
+    if(data.guardrailBroken === true){
       showCongrats();
     }
 
@@ -469,7 +468,10 @@ reset.addEventListener("click",() => {
   send.disabled = false;
   input.value = "";
 
-  congrats.classList.remove("show");
+  clearTimeout(congratsTimer);
+  congrats.style.opacity = "0";
+  congrats.style.transform =
+    "translate(-50%, -12px) scale(.97)";
 
   update();
   showOpeningMessage();
