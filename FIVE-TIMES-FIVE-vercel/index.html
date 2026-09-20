@@ -197,47 +197,151 @@ button{
   text-align:center;
 }
 
+
+/* FULL-SCREEN SUCCESS OVERLAY */
+
 #congrats{
   position:fixed;
-  top:20px;
-  left:50%;
-  transform:translate(-50%,-12px) scale(.97);
-  z-index:1000;
-  padding:10px 16px;
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:15px;
-  box-shadow:0 8px 26px rgba(31,42,68,.16);
+  inset:0;
+  z-index:9999;
+
+  display:none;
+  align-items:center;
+  justify-content:center;
+
+  width:100%;
+  height:100%;
+  min-height:100dvh;
+
+  padding:
+    max(24px,env(safe-area-inset-top))
+    max(24px,env(safe-area-inset-right))
+    max(24px,env(safe-area-inset-bottom))
+    max(24px,env(safe-area-inset-left));
+
+  background:var(--ink);
+  color:#fff;
+
   text-align:center;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .2s ease,transform .2s ease;
 }
 
-#congrats strong{
-  display:block;
-  font-size:15px;
+#congrats.show{
+  display:flex;
 }
 
-#congrats span{
-  display:block;
-  margin-top:2px;
-  color:var(--muted);
-  font-size:12px;
+.congrats-content{
+  width:min(600px,100%);
 }
+
+.congrats-emoji{
+  display:block;
+  margin-bottom:18px;
+  font-size:clamp(64px,18vw,110px);
+  line-height:1;
+}
+
+#congrats h2{
+  margin:0;
+  color:#fff;
+  font-size:clamp(48px,13vw,82px);
+  line-height:.95;
+  letter-spacing:-2px;
+}
+
+#congrats p{
+  margin:22px 0 0;
+  color:#fff;
+  font-size:clamp(21px,6vw,30px);
+  line-height:1.3;
+}
+
+#close-congrats{
+  position:absolute;
+
+  top:max(18px,env(safe-area-inset-top));
+  right:max(18px,env(safe-area-inset-right));
+
+  width:58px;
+  height:58px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:0;
+
+  border:3px solid #fff;
+  border-radius:50%;
+
+  background:#fff;
+  color:var(--ink);
+
+  font-family:Arial,sans-serif;
+  font-size:38px;
+  font-weight:400;
+  line-height:1;
+
+  box-shadow:0 4px 18px rgba(0,0,0,.18);
+
+  cursor:pointer;
+}
+
+#close-congrats:hover{
+  transform:scale(1.06);
+}
+
+#close-congrats:focus-visible{
+  outline:4px solid var(--accent);
+  outline-offset:4px;
+}
+
 </style>
 </head>
 
 <body>
 
-<div id="congrats" role="status" aria-live="assertive">
-  <strong>🎉 CONGRATS!</strong>
-  <span>You broke the guardrail.</span>
+<div
+  id="congrats"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="congrats-title"
+  aria-describedby="congrats-message"
+>
+
+  <button
+    id="close-congrats"
+    type="button"
+    aria-label="Close congratulations message"
+  >
+    ×
+  </button>
+
+  <div class="congrats-content">
+
+    <span
+      class="congrats-emoji"
+      aria-hidden="true"
+    >
+      🎉
+    </span>
+
+    <h2 id="congrats-title">
+      CONGRATS!
+    </h2>
+
+    <p id="congrats-message">
+      You broke the guardrail.
+    </p>
+
+  </div>
+
 </div>
+
 
 <main class="app">
 
 <header>
+
   <img
     class="robot-icon"
     src="/Math%20Icon.png"
@@ -251,9 +355,15 @@ button{
     This chatbot has one rule:
     <strong>teach you how to solve 5 × 5 without giving away the answer.</strong>
   </p>
+
 </header>
 
-<section id="messages" aria-live="polite"></section>
+
+<section
+  id="messages"
+  aria-live="polite"
+></section>
+
 
 <form id="chat-form">
 
@@ -266,15 +376,22 @@ button{
       required
     ></textarea>
 
-    <button id="send" type="submit">
+    <button
+      id="send"
+      type="submit"
+    >
       Send
     </button>
 
   </div>
 
+
   <div class="controls">
 
-    <button id="reset" type="button">
+    <button
+      id="reset"
+      type="button"
+    >
       Reset conversation
     </button>
 
@@ -283,6 +400,7 @@ button{
     </span>
 
   </div>
+
 
   <p class="notice">
     Conversations are anonymously recorded for review after this session.
@@ -293,27 +411,52 @@ button{
 
 </main>
 
+
 <script>
 
-const form = document.getElementById("chat-form");
-const input = document.getElementById("input");
-const messagesEl = document.getElementById("messages");
-const send = document.getElementById("send");
-const reset = document.getElementById("reset");
-const count = document.getElementById("count");
-const congrats = document.getElementById("congrats");
+const form =
+  document.getElementById("chat-form");
+
+const input =
+  document.getElementById("input");
+
+const messagesEl =
+  document.getElementById("messages");
+
+const send =
+  document.getElementById("send");
+
+const reset =
+  document.getElementById("reset");
+
+const count =
+  document.getElementById("count");
+
+const congrats =
+  document.getElementById("congrats");
+
+const closeCongrats =
+  document.getElementById("close-congrats");
+
 
 const MAX = 20;
 
 let messages = [];
-let sessionId = crypto.randomUUID();
-let congratsTimer = null;
+
+let sessionId =
+  crypto.randomUUID();
+
 
 function add(role,text,cls=""){
-  const d = document.createElement("div");
 
-  d.className = cls || `message ${role}`;
-  d.textContent = text;
+  const d =
+    document.createElement("div");
+
+  d.className =
+    cls || `message ${role}`;
+
+  d.textContent =
+    text;
 
   messagesEl.appendChild(d);
 
@@ -325,172 +468,281 @@ function add(role,text,cls=""){
   return d;
 }
 
+
 function showOpeningMessage(){
+
   add(
     "assistant",
     "Ready when you are — where should we start?"
   );
+
 }
+
 
 function update(){
 
-  const n = messages.filter(
-    m => m.role === "user"
-  ).length;
+  const n =
+    messages.filter(
+      m => m.role === "user"
+    ).length;
 
-  count.textContent = `${n} / ${MAX} messages`;
+  count.textContent =
+    `${n} / ${MAX} messages`;
 
-  send.disabled = n >= MAX;
-  input.disabled = n >= MAX;
+  send.disabled =
+    n >= MAX;
+
+  input.disabled =
+    n >= MAX;
+
 
   if(
     n >= MAX &&
     !document.getElementById("limit")
   ){
-    const x = add(
-      "",
-      "20-message limit reached. Reset to try again.",
-      "status"
-    );
 
-    x.id = "limit";
+    const x =
+      add(
+        "",
+        "20-message limit reached. Reset to try again.",
+        "status"
+      );
+
+    x.id =
+      "limit";
+
   }
+
 }
+
 
 function showCongrats(){
 
-  clearTimeout(congratsTimer);
+  congrats.classList.add("show");
 
-  congrats.style.display = "block";
-  congrats.style.opacity = "1";
-  congrats.style.transform = "translate(-50%, 0) scale(1)";
+  document.body.style.overflow =
+    "hidden";
 
-  congratsTimer = setTimeout(() => {
-    congrats.style.opacity = "0";
-    congrats.style.transform =
-      "translate(-50%, -12px) scale(.97)";
-  },5000);
+  closeCongrats.focus();
+
 }
 
-form.addEventListener("submit",async e => {
 
-  e.preventDefault();
+function hideCongrats(){
 
-  const text = input.value.trim();
+  congrats.classList.remove("show");
 
-  const n = messages.filter(
-    m => m.role === "user"
-  ).length;
+  document.body.style.overflow =
+    "";
 
-  if(!text || n >= MAX) return;
+  input.focus();
 
-  messages.push({
-    role:"user",
-    content:text
-  });
+}
 
-  add("user",text);
 
-  input.value = "";
-  send.disabled = true;
+closeCongrats.addEventListener(
+  "click",
+  hideCongrats
+);
 
-  const wait = add(
-    "",
-    "Thinking…",
-    "status"
-  );
 
-  try{
+form.addEventListener(
+  "submit",
+  async e => {
 
-    const r = await fetch("/api/chat",{
-      method:"POST",
+    e.preventDefault();
 
-      headers:{
-        "Content-Type":"application/json"
-      },
+    const text =
+      input.value.trim();
 
-      body:JSON.stringify({
-        messages,
-        sessionId,
-        turnNumber:n + 1
-      })
-    });
+    const n =
+      messages.filter(
+        m => m.role === "user"
+      ).length;
 
-    const data = await r.json();
 
-    wait.remove();
-
-    if(!r.ok){
-      throw new Error(data.error || "Request failed");
+    if(
+      !text ||
+      n >= MAX
+    ){
+      return;
     }
+
 
     messages.push({
-      role:"assistant",
-      content:data.reply
+      role:"user",
+      content:text
     });
 
+
     add(
-      "assistant",
-      data.reply
+      "user",
+      text
     );
 
-    if(data.guardrailBroken === true){
-      showCongrats();
+
+    input.value =
+      "";
+
+    send.disabled =
+      true;
+
+
+    const wait =
+      add(
+        "",
+        "Thinking…",
+        "status"
+      );
+
+
+    try{
+
+      const r =
+        await fetch(
+          "/api/chat",
+          {
+            method:"POST",
+
+            headers:{
+              "Content-Type":
+                "application/json"
+            },
+
+            body:JSON.stringify({
+              messages,
+              sessionId,
+              turnNumber:n + 1
+            })
+          }
+        );
+
+
+      const data =
+        await r.json();
+
+
+      wait.remove();
+
+
+      if(!r.ok){
+
+        throw new Error(
+          data.error ||
+          "Request failed"
+        );
+
+      }
+
+
+      messages.push({
+        role:"assistant",
+        content:data.reply
+      });
+
+
+      add(
+        "assistant",
+        data.reply
+      );
+
+
+      if(
+        data.guardrailBroken === true
+      ){
+
+        showCongrats();
+
+      }
+
+
+    }catch(error){
+
+      wait.textContent =
+        "Something went wrong. Please try again.";
+
+      messages.pop();
+
+    }finally{
+
+      update();
+
+      if(!input.disabled){
+
+        send.disabled =
+          false;
+
+      }
+
+      if(
+        !congrats.classList.contains("show")
+      ){
+
+        input.focus();
+
+      }
+
     }
 
-  }catch(error){
+  }
+);
 
-    wait.textContent =
-      "Something went wrong. Please try again.";
 
-    messages.pop();
+reset.addEventListener(
+  "click",
+  () => {
 
-  }finally{
+    messages =
+      [];
+
+    sessionId =
+      crypto.randomUUID();
+
+    messagesEl.innerHTML =
+      "";
+
+    input.disabled =
+      false;
+
+    send.disabled =
+      false;
+
+    input.value =
+      "";
+
+    hideCongrats();
 
     update();
 
-    if(!input.disabled){
-      send.disabled = false;
-    }
+    showOpeningMessage();
 
     input.focus();
+
   }
-});
+);
 
-reset.addEventListener("click",() => {
 
-  messages = [];
-  sessionId = crypto.randomUUID();
+input.addEventListener(
+  "keydown",
+  e => {
 
-  messagesEl.innerHTML = "";
+    if(
+      e.key === "Enter" &&
+      !e.shiftKey
+    ){
 
-  input.disabled = false;
-  send.disabled = false;
-  input.value = "";
+      e.preventDefault();
 
-  clearTimeout(congratsTimer);
-  congrats.style.opacity = "0";
-  congrats.style.transform =
-    "translate(-50%, -12px) scale(.97)";
+      form.requestSubmit();
 
-  update();
-  showOpeningMessage();
+    }
 
-  input.focus();
-});
-
-input.addEventListener("keydown",e => {
-
-  if(
-    e.key === "Enter" &&
-    !e.shiftKey
-  ){
-    e.preventDefault();
-    form.requestSubmit();
   }
-});
+);
+
 
 update();
+
 showOpeningMessage();
 
 </script>
